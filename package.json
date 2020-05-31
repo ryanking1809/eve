@@ -1,0 +1,49 @@
+{
+  "name": "@ryki/eve",
+  "version": "0.1.0",
+  "description": "Observable / global event state management",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -cw",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryanking1809/eve.git"
+  },
+  "keywords": [
+    "state",
+    "management",
+    "observable",
+    "flux"
+  ],
+  "author": "Ryan King",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ryanking1809/eve/issues"
+  },
+  "homepage": "https://github.com/ryanking1809/eve#readme",
+  "prettier": {
+    "semi": false,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "jsxBracketSameLine": true,
+    "tabWidth": 2,
+    "printWidth": 120
+  },
+  "dependencies": {
+    "immutable-tuple": "^0.4.10",
+    "cuid": "^2.1.8"
+  },
+  "devDependencies": {
+    "rollup": "^2.7.2",
+    "rollup-plugin-terser": "^5.3.0"
+  }
+}
