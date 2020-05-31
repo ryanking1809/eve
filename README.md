@@ -25,16 +25,16 @@ A `model` is a store that can generate instances. Below we can create a sticky n
 const stickyModel = model("sticky", {
   // All your application's state should derive
   // from the state props
-	state: {
-		note: "This is a sticky note"
+  state: {
+    note: "This is a sticky note"
   },
   // Derivatives are computed from state
-	derivatives: {
+  derivatives: {
     // Eve provides some derivative helpers
     // this will automaticall create a local history for this object
     // making undo / redo super easy
-		history: derivatives.history()
-	}
+    history: derivatives.history()
+  }
 })
 ```
 
@@ -42,16 +42,16 @@ A `collection` does not have instances, and typically stores reference to `model
 
 ```js 
 const stickies = collection("stickies", {
-	state: {
-		selectedNoteId: null
-	},
-	derivatives: {
+  state: {
+    selectedNoteId: null
+  },
+  derivatives: {
     // gets a "sticky" model with the id that matches "selectedNoteId"
     selectedNote: derivatives.modelRef({modelName: "sticky", refProp: "selectedNoteId"}),
     // these will automically updates as sticky models are created
     notes: derivatives.modelList({modelName: "sticky"},
-		notesById: derivatives.modelLookup({modelName: "sticky", key: s => s.id})
-	}
+    notesById: derivatives.modelLookup({modelName: "sticky", key: s => s.id})
+  }
 })
 ```
 
