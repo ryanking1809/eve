@@ -81,7 +81,7 @@ const firePatchEvents = (patches, inversePatches, recordHistory = true) => {
       ...p,
       inverse: inversePatches[i]
     };
-    if (fireInterceptors(event)) {
+    if (fireListeners(event, "intercept")) {
       events.push(event);
     }
   });
@@ -102,16 +102,16 @@ export const fireEvents = (
       timestamp: ts,
       id: cuid()
     };
-    if (skipInterceptors || fireInterceptors(event)) {
-      approvedEvents.push(event);
-    }
+    if (skipInterceptors || fireListeners(e, "intercept")) {
+		approvedEvents.push(event);
+	}
   });
   eveStore = applyPatches(eveStore, approvedEvents);
   invisibleUpdateEveStore(
     store => void store._session.log.push(...approvedEvents)
   );
   if (recordHistory) addToHistories(approvedEvents);
-  approvedEvents.forEach(e => fireListeners(e));
+  approvedEvents.forEach(e => fireListeners(e, "react"));
 };
 
 export const fireEvent = (
