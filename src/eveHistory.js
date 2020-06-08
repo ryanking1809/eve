@@ -39,21 +39,25 @@ export const eveHistory = {
       },
       undo() {
         const latestEvents = Array.from(
-          Array.from(this.events)[this.events.size - 1]?.[1].values() ?? []
-        );
+          (Array.from(this.events)[this.events.size - 1] &&
+            Array.from(this.events)[this.events.size - 1][1].values()) ||
+            []
+        )
         undoHistories(latestEvents);
       },
       redo() {
         const latestUndoneEvents = Array.from(
-          Array.from(this.undone)[this.undone.size - 1]?.[1].values() ?? []
-        );
+          (Array.from(this.undone)[this.undone.size - 1] &&
+            Array.from(this.undone)[this.undone.size - 1][1].values()) ||
+            []
+        )
         redoHistories(latestUndoneEvents);
       },
       undoEvents(events) {
         let ownedEvents = [];
         events.forEach(event => {
-          if (this.events.get(event.timestamp)?.get(event.id)) {
-            ownedEvents.push(event);
+          if (this.events.get(event.timestamp) && this.events.get(event.timestamp).get(event.id)) {
+            ownedEvents.push(event)
           }
         });
         if (!ownedEvents.length) return;
@@ -72,7 +76,7 @@ export const eveHistory = {
       redoEvents(events) {
         let ownedEvents = [];
         events.forEach(event => {
-          if (this.undone.get(event.timestamp)?.get(event.id)) {
+          if (this.undone.get(event.timestamp) && this.undone.get(event.timestamp).get(event.id)) {
             ownedEvents.push(event);
           }
         });

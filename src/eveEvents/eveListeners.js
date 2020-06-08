@@ -16,8 +16,9 @@ export const fireListeners = (event, type = "listen") => {
 					eventListeners[eventId].size &&
 					[...eventListeners[eventId]].forEach((reaction) => {
 						// used by intercepts to prevent events
-						let result = reaction(event) ?? true;
-						if (!result) success = false;
+
+						let result = reaction(event)
+						success = !(result === false)
 					});
 			});
 			return success;

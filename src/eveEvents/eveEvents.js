@@ -50,7 +50,7 @@ export const storeIdFromPath = path => {
   let id = { store: undefined, storeId: undefined, prop: undefined };
   if (path[0] !== "stores") return id;
   id.store = path[1]
-  const singleton = eveStores[id.store]?._singleton
+  const singleton = eveStores[id.store] && eveStores[id.store]._singleton
   id.storeId = singleton ? undefined : path[2];
   id.prop = singleton ? path[2] : path[3]
   return id;
@@ -59,7 +59,7 @@ export const storeIdFromPath = path => {
 export const storeFromId = eId => {
 	const cls = eveStores[eId.store];
 	if (!cls) return undefined;
-	const singleton = cls?._singleton;
+	const singleton = cls && cls._singleton
 	if (singleton) return cls.instance;
 	if (!eId.storeId) return cls;
 	return cls.get(eId.storeId);

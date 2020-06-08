@@ -4,7 +4,7 @@ import {
 	ignoreEvents,
 	fireListeners,
 } from "./eveEvents/eveListeners";
-export * from "./eveStores/";
+export * from "./eveStores/index";
 export { eveHistory } from "./eveHistory";
 export * from "./frameworks/react";
 
