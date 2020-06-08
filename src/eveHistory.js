@@ -1,10 +1,10 @@
-import { silentUpdateEveStore, eveStore, fireEvents } from "./eveStore";
-import { fireListeners, addListeners } from "./eveListeners";
+import { silentUpdateEveState, eveState, fireEvents } from "./eveState";
+import { fireListeners, addListeners } from "./eveEvents/eveListeners";
 
-export const histories = {};
+export const eveHistories = {};
 
 const undoHistories = events => {
-  fireEvents(events.map(e => e.inverse), false, false);
+  fireEvents(events.map(e => ({...e, ...e.inverse})), false, false);
   events.forEach((e) => fireListeners(e, "undoHistory"));
 };
 
@@ -19,16 +19,17 @@ export const addToHistories = events => {
 
 export const eveHistory = {
   create: ({name, listenTo, eventIds}) => {
-    silentUpdateEveStore(
-      store =>
-        (store.history[name] = {
+    console.log("eventIds", eventIds)
+    silentUpdateEveState(
+      state =>
+        (state.history[name] = {
           events: new Map(),
           undone: new Map()
         })
     );
     const history = {
       get raw() {
-        return eveStore.history[name];
+        return eveState.history[name];
       },
       get events() {
         return this.raw.events;
@@ -56,12 +57,12 @@ export const eveHistory = {
           }
         });
         if (!ownedEvents.length) return;
-        silentUpdateEveStore(store => {
-          const self = store.history[name];
+        silentUpdateEveState(state => {
+          const self = state.history[name];
           ownedEvents.forEach(e => {
             const undoneAtTimestamp = self.undone.get(e.timestamp) || new Map();
             undoneAtTimestamp.set(e.id, e);
-            store.history[name].undone.set(e.timestamp, undoneAtTimestamp);
+            state.history[name].undone.set(e.timestamp, undoneAtTimestamp);
             const eventsAtTimestamp = self.events.get(e.timestamp);
             eventsAtTimestamp.delete(e.id);
             if (!eventsAtTimestamp.size) self.events.delete(e.timestamp);
@@ -76,12 +77,12 @@ export const eveHistory = {
           }
         });
         if (!ownedEvents.length) return;
-        silentUpdateEveStore(store => {
-          const self = store.history[name];
+        silentUpdateEveState(state => {
+          const self = state.history[name];
           ownedEvents.forEach(e => {
             const eventsAtTimestamp = self.events.get(e.timestamp) || new Map();
             eventsAtTimestamp.set(e.id, e);
-            store.history[name].events.set(e.timestamp, eventsAtTimestamp);
+            state.history[name].events.set(e.timestamp, eventsAtTimestamp);
             const undoneAtTimestamp = self.undone.get(e.timestamp);
             undoneAtTimestamp.delete(e.id);
             if (!undoneAtTimestamp.size) self.undone.delete(e.timestamp);
@@ -89,15 +90,14 @@ export const eveHistory = {
         });
       },
       addEvents(events) {
-        if (eveStore.history[name]) {
-          // console.log(eveStore.history[name]);
-          silentUpdateEveStore(store => {
-            const self = store.history[name];
+        if (eveState.history[name]) {
+          silentUpdateEveState(state => {
+            const self = state.history[name];
             events.forEach(event => {
               const eventsAtTimestamp =
                 self.events.get(event.timestamp) || new Map();
               eventsAtTimestamp.set(event.id, event);
-              store.history[name].events.set(
+              state.history[name].events.set(
                 event.timestamp,
                 eventsAtTimestamp
               );
@@ -119,7 +119,7 @@ export const eveHistory = {
       addListeners(eventIds, listenUndo, "undoHistory");
       addListeners(eventIds, listenRedo, "redoHistory");
     }
-    histories[name] = history;
+    eveHistories[name] = history;
     return history;
   }
 };
