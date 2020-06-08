@@ -1,162 +1,121 @@
-# Eve (WIP)
+# Eve
 
-Eve is a global imumtable store wrapped in an observable layer. All changes in Eve happen through events, allowing you to easily replay sessions, implement undo / redo functionality, and even implement efficient sorted array using binary search. Components can listen to events as they happen and efficiently update when needed.
-
-### Goals
-
-- Simple observable interface both allowing you to update and use js objects as you normally would
-- Take on the work of updating to components and derived state as efficiently as possible
-- Immutable global store behind the scenes, easily serializable for debugging and built-in session playback
-- Event system for built-in undo / redo, being able to filter undobable events
-
-#### Not yet available
+Eve is an observable state managment library back by a global immutable store, combining efficient event-based updates with simpler debugging. All changes to state are recorded, serializable, and replayable. Making for easy persistance and undo / redo functionality.
 
     npm install @ryki/eve
 
 ## How to use
 
-```js
-import { model, derivatives, collection } from "@ryki/eve";
-```
-
-A `model` is a store that can generate instances. Below we can create a sticky note model.
+For an example, let's build a basic sticky notes app.
 
 ```js
-const stickyModel = model("sticky", {
-  // All your application's state should derive
-  // from the state props
-  state: {
-    note: "This is a sticky note"
-  },
-  // Derivatives are computed from state
-  derivatives: {
-    // Eve provides some derivative helpers
-    // this will automaticall create a local history for this object
-    // making undo / redo super easy
-    history: derivatives.history()
-  }
-})
+import { eveStore, eveStateManager, state, helper, helpers } from "@ryki/eve";
 ```
 
-A `collection` does not have instances, and typically stores reference to `model` instances. Here will create a collection for our sticky notes.
+We will create the following class for our sticky notes. We must use the `@eveStore` decorator and extend the `eveStateManager`
 
-```js 
-const stickies = collection("stickies", {
-  state: {
-    selectedNoteId: null
-  },
-  derivatives: {
-    // gets a "sticky" model with the id that matches "selectedNoteId"
-    selectedNote: derivatives.modelRef({modelName: "sticky", refProp: "selectedNoteId"}),
-    // these will automically updates as sticky models are created
-    notes: derivatives.modelList({modelName: "sticky"},
-    notesById: derivatives.modelLookup({modelName: "sticky", key: s => s.id})
-  }
-})
+All properties using the `@state` decorator will be stored in the global state, and all other state should derive from this.
+
+```js
+@eveStore("Sticky")
+class Sticky extends eveStateManager {
+	@state note = "This is a sticky note";
+	@state firstName = "Mary"
+	@state lastName = "Jane"
+}
+```
+
+We can use a `@derivative` decorator to create additional values derived from the state. Whenever the state updates the derivative will know to update.
+
+```js
+@eveStore("Sticky")
+class Sticky extends eveStateManager {
+	@state note = "This is a sticky note";
+	@state firstName = "Mary"
+	@state lastName = "Jane"
+	// use @derivative derived values
+	@derivative
+	get name {
+		return `${this.firstName} ${this.lastName}`
+	}
+```
+
+Adding undo / redo functionality in eve is super easy. In this case we're using the history helper to provide localised undo / redo functionality to each individual sticky note.
+
+```js
+@eveStore("Sticky")
+class Sticky extends eveStateManager {
+	@state note = "This is a sticky note";
+	@state firstName = "Mary"
+	@state lastName = "Jane"
+	@derivative
+	get name {
+		return `${this.firstName} ${this.lastName}`
+	}
+	// localised history
+	@helper history = helpers.history();
+```
+
+Other helpers can be used to automatically create references to other object. Below, the `Stickies` class will automatically update whenever a `Sticky` is created, deleted, or updated.
+
+```js
+@eveStore("Stickies", true)
+class Stickies extends eveStateManager {
+	@helper notes = helpers.storeList({ store: Sticky });
+	@helper notesById = helpers.storeLookup({
+		store: Sticky,
+		key: (s) => s.id,
+	});
+}
 ```
 
 Now you can just create some sticky notes and the collection will automically update.
 
-```js
-stickyModel.create();
-stickyModel.create();
-console.log(stickies.notes)
-// -> [sticky, sticky]
-```
-
-Underneath our immutable store will look like this.
-
-```js
-import { eveStore } from "@ryki/eve";
-console.log(eveStore);
-```
-
-```js
-{
-	"_session": {
-        "id": "ckavnohi700003g6762nvc51l",
-         // start of session used for replaying
-        "ts": 1590965330335,
-         // a recording of all changes to the store, using immer patches
-		"log": [...]
-    },
-    // the instance histories for undo / redo
-	"history": {
-		"ckavnohij00053g67t4268jvs": {
-			"events": {},
-			"undone": {}
-		},
-		"ckavnohim00083g67smk92zet": {
-			"events": {},
-			"undone": {}
-		}
-    },
-    // our new model instances
-	"models": {
-		"sticky": {
-			"ckavnohij00053g67t4268jvs": {
-				"note": "This is a sticky note",
-				"modelName": "sticky",
-				"id": "ckavnohij00053g67t4268jvs"
-			},
-			"ckavnohim00083g67smk92zet": {
-				"note": "This is a sticky note",
-				"modelName": "sticky",
-				"id": "ckavnohim00083g67smk92zet"
-			}
-		}
-    },
-    // the collection data
-	"collections": {
-		"stickies": {
-			"selectedNoteId": null,
-			"modelName": "stickies",
-			"id": "ckavnohig00033g67jz3n2t0c"
-		}
-	}
-}
-```
+### Persistance
 
 You can serialize and replay any session.
+
 ```js
-import { getSnapshot, replaySnapshot } from "@ryki/eve";
-const snap = getSnapshot();
+import { eveState } from "@ryki/eve";
+const snap = eveState.serializedSnapshot();
 // The 2nd argument is a playback speed multiplier
-replaySnapshot(snap, 2);
+replaySnareplaySerializedSnapshotpshot(snap, 2);
+```
+
+### Undo / Redo
+
+A history object can listen to any classes, instances, or properties with state to create undo / redo functionality.
+
+```js
+import { eveHistory } from "@ryki/eve";
+const history = eveHistory.create({
+	name: "undoable",
+	listenTo: () => [Sticky]
+});
+// this will only undo Sticky class instances but no toher instances
+history.undo()
+history.redo()
 ```
 
 ### React
 
-You can ad a react listener to automically update you components like so (soon will be part of the api)
+Eve is framework independant but a `useListener` component is available to react users.
 
 ```js
-import { listenTo } from "@ryki/eve";
-
-function useListener(propArray) {
-	const [reactState, setReactState] = useState(propArray());
-	useEffect(() => {
-		listenTo(propArray, () => {
-			setReactState(propArray());
-		});
-	}, []);
-	return reactState;
-}
+import { useListener } from "@ryki/eve";
 
 function Sticky({ sticky }) {
 	const [note] = useListener(() => [sticky.note]);
-	const selectNote = useCallback(() => {
-		stickies.selectedNoteId = sticky.id;
-	});
-	const deselectNote = useCallback(() => {
-		stickies.selectedNoteId = null;
-	});
+	const updateNote = useCallback((e) => {
+		sticky.note = e.target.value
+	})
+	// this will automatically update whenever note changes
+	// regardless of where the change occurs
 	return (
 		<div className="sticky">
 			<textarea
-				onFocus={selectNote}
-				onBlur={deselectNote}
 				value={note}
-				onChange={(e) => (sticky.note = e.target.value)}
+				onChange={updateNote}
 			/>
 		</div>
 	);
