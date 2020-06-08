@@ -19,7 +19,6 @@ export const addToHistories = events => {
 
 export const eveHistory = {
   create: ({name, listenTo, eventIds}) => {
-    console.log("eventIds", eventIds)
     silentUpdateEveState(
       state =>
         (state.history[name] = {
