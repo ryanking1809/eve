@@ -1,4 +1,4 @@
-import { traceListenerIds } from "../../eveEvents/eveListeners";
+import { traceListenerIds, fireListeners } from "../../eveEvents/eveListeners";
 import { eventIdToObject } from "../../eveEvents/eveEvents";
 import { emitTracer } from "../../eveEvents/eveTracer";
 
@@ -37,6 +37,7 @@ function decorator(target, prop, descriptor, listenTo) {
             cachedVal = descriptor.get.bind(self)();
         }
         needsUpdate = false;
+        fireListeners({ op: "replace", store: this._name, storeId: this.id, prop });
     };
     
     !target.listenTo && (target.listenTo = {})
@@ -50,18 +51,14 @@ function decorator(target, prop, descriptor, listenTo) {
 
     Object.defineProperty(target.constructor, prop, {
 		get() {
-			return (listenTo || descriptor.get).bind(target.constructor)(
-				target.constructor
-			);
+			emitTracer({ store: this._name, prop });
 		},
 	});
 
     return {
         ...descriptor,
         get() {
-            this._listeners.get(prop).forEach(eId => {
-                emitTracer(eventIdToObject(eId))
-            });
+			emitTracer({ store: this._name, storeId: this.id, prop });
             needsUpdate && updateCache(this);
             return cachedVal;
         }

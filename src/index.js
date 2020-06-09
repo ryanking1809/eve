@@ -1,4 +1,4 @@
-import { eveState as eState, stateSnapshot, serializedSnapshot, applySnapshot, replaySnapshot, applySerializedSnapshot, replaySerializedSnapshot } from "./eveState"
+import { eveState as eState, stateSnapshot, serializedSnapshot, applySnapshot, replaySnapshot, applySerializedSnapshot, replaySerializedSnapshot, resetState } from "./eveState"
 import {
 	listenTo,
 	ignoreEvents,
@@ -10,14 +10,15 @@ export * from "./frameworks/react";
 
 export const eveState = {
 			get raw() {
-                return eState
-            },
+				return eState;
+			},
 			snapshot: stateSnapshot,
 			serializedSnapshot: serializedSnapshot,
 			applySnapshot: applySnapshot,
 			replaySnapshot: replaySnapshot,
 			applySerializedSnapshot: applySerializedSnapshot,
 			replaySerializedSnapshot: replaySerializedSnapshot,
+			reset: resetState,
 		};
         
 export const eveEvents = {

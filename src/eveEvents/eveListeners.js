@@ -99,13 +99,13 @@ export const traceListenerIds = (getObjects, op, returnVal = false) => {
 	tracerCallbacks.add(addPaths);
 	const val = getObjects();
 	tracerCallbacks.delete(addPaths);
-	if (val._tracer) {
+	if (val && val._tracer) {
 		let vt = val._tracer;
 		vt && (vt.op = op);
 		listenerIds.push(vt);
 	}
 	Array.isArray(val) && val.forEach(v => {
-		if (v._tracer) {
+		if (v && v._tracer) {
 			let vt = v._tracer;
 			vt && (vt.op = op);
 			listenerIds.push(vt);

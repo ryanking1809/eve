@@ -1,5 +1,6 @@
 import { BinaryMap } from "../dataTypes/BinaryMap";
 import { emitTracer } from "../../eveEvents/eveTracer";
+import { fireListeners } from "../../eveEvents/eveListeners";
 
 export const storeLookup = ({ store, key, filter, sort }) => {
 	return (target, prop, descriptor, listenTo) => {
@@ -13,12 +14,18 @@ export const storeLookup = ({ store, key, filter, sort }) => {
 					)
 			  )
 			: new Map();
-		const addItem = ({ event }) => {
+		const addItem = ({ event, self }) => {
 			if (event.storeId && !event.prop) {
 				const newInst = store.get(event.storeId);
 				if (!filter || filter(newInst)) {
 					items.set(key(newInst), newInst);
 				}
+                fireListeners({
+					op: "replace",
+					store: self._name,
+					storeId: self.id,
+					prop,
+				});
 			}
 		};
 		target.listenTo[prop].push({
@@ -26,7 +33,7 @@ export const storeLookup = ({ store, key, filter, sort }) => {
 			action: addItem,
 			type: "listen",
 		});
-		const updateItem = ({ event }) => {
+		const updateItem = ({ event, self }) => {
 			if (event.prop) {
 				const inst = store.get(event.storeId);
 				if (!filter || filter(inst)) {
@@ -34,6 +41,12 @@ export const storeLookup = ({ store, key, filter, sort }) => {
 				} else {
 					items.delete(key(inst));
 				}
+                fireListeners({
+					op: "replace",
+					store: self._name,
+					storeId: self.id,
+					prop,
+				});
 			}
 		};
 		target.listenTo[prop].push({
@@ -41,10 +54,16 @@ export const storeLookup = ({ store, key, filter, sort }) => {
 			action: updateItem,
 			type: "listen",
 		});
-		const removeItem = ({event}) => {
+		const removeItem = ({event, self}) => {
 			const inst = store.get(event.storeId);
 			if (event.storeId && !event.prop) {
 				items.delete(key(inst));
+                fireListeners({
+					op: "replace",
+					store: self._name,
+					storeId: self.id,
+					prop,
+				});
 			}
 		};
 		target.listenTo[prop].push({
@@ -54,13 +73,20 @@ export const storeLookup = ({ store, key, filter, sort }) => {
 		});
 		Object.defineProperty(target.constructor, prop, {
 			get() {
-				emitTracer(store._tracer);
+				emitTracer({
+					store: this._name,
+					prop,
+				});
 				return {}
 			},
 		});
 		return {
 			get() {
-				emitTracer(store._tracer);
+				emitTracer({
+					store: this._name,
+					storeId: this.id,
+					prop,
+				});
 				return items;
 			},
 		};

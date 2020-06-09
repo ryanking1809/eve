@@ -10,6 +10,8 @@ import cuid from "cuid";
 import { storeIdFromPath } from "./eveEvents/eveEvents";
 enableAllPlugins();
 
+let editingState = false;
+
 export let eveState = {
 			_session: {
 				id: cuid(),
@@ -20,35 +22,45 @@ export let eveState = {
 			stores: {},
     };
     
-export const replaySerializedSnapshot = (snapshot, speed = 1) => {
-  applySnapshot(parse(snapshot), speed);
-};
+export const replaySerializedSnapshot = (snapshot, speed = 1, callback) => {
+			applySnapshot(parse(snapshot), speed, callback);
+		};
 
-export const applySerializedSnapshot = (snapshot, speed) => {
-	applySnapshot(parse(snapshot), speed);
-};
+export const applySerializedSnapshot = (snapshot, speed, callback) => {
+			applySnapshot(parse(snapshot), speed, callback);
+		};
     
-export const replaySnapshot = (snapshot, speed=1) => {
-  applySnapshot(snapshot, speed);
+export const replaySnapshot = (snapshot, speed = 1, callback) => {
+			applySnapshot(snapshot, speed, callback);
+		};
+
+export const applySnapshot = (snapshot, speed, callback) => {
+  if (editingState) return;
+  editingState = true;
+  resetState(() => {
+    if (speed) {
+      snapshot._session.log.forEach((event, index) => {
+        setTimeout(
+          () => {
+            fireEvent(event, false, event.history)
+            if (index === snapshot._session.log.length-1) {
+              editingState = false;
+              callback && callback();
+            }
+          },
+          (event.timestamp - snapshot._session.ts) / speed
+        );
+      });
+    } else {
+      snapshot._session.log.forEach((event) => {
+        fireEvent(event, false, event.history);
+      });
+      editingState = false;
+    }
+  })
 };
 
-export const applySnapshot = (snapshot, speed) => {
-  resetState()
-  if(speed) {
-    snapshot._session.log.forEach((event) => {
-			setTimeout(
-				() => fireEvent(event, false, event.history),
-				(event.timestamp - snapshot._session.ts) / speed
-			);
-	  });
-  } else {
-    snapshot._session.log.forEach((event) => {
-      fireEvent(event, false, event.history)
-    });
-  }
-};
-
-export const resetState = () => {
+export const resetState = (callback) => {
 			silentUpdateEveState((state) => {
 				Object.keys(state.stores).forEach((m) =>
 					Object.keys(state.stores[m]).forEach(
@@ -58,17 +70,20 @@ export const resetState = () => {
 			});
 			silentUpdateEveState((state) => {
 				Object.keys(state.stores).forEach(
-					(m) => delete state.stores[m]
+					(m) => state.stores[m] = {}
 				);
 				Object.keys(state.history).forEach(
-					(m) => delete state.history[m]
+					(m) => state.history[m] = {}
 				);
-				state._session = {
-					id: cuid(),
-					ts: Date.now(),
-					log: [],
-				};
-			});
+      });
+      invisibleUpdateEveState((state) => {
+        state._session = {
+          id: cuid(),
+          ts: Date.now(),
+          log: [],
+        };
+      });
+      callback && callback();
 		};
 
 export const stateSnapshot = () => {
