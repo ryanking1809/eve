@@ -87,9 +87,9 @@ hyper-interactive@^1.3.1:
     immutable-tuple "^0.4.10"
     nearley "^2.19.1"
 
-immer@^6.0.8:
-  version "6.0.9"
-  resolved "https://registry.yarnpkg.com/immer/-/immer-6.0.9.tgz#b9dd69b8e69b3a12391e87db1e3ff535d1b26485"
+immer@^9.0.6:
+  version "9.0.6"
+  resolved "https://registry.yarnpkg.com/immer/-/immer-9.0.6.tgz#7a96bf2674d06c8143e327cbf73539388ddf1a73"
 
 immutable-tuple@^0.4.10:
   version "0.4.10"
